@@ -42,6 +42,8 @@ import com.samco.trackandgraph.util.showKeyboard
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
+import java.util.*
+import kotlin.concurrent.timerTask
 import javax.inject.Inject
 
 const val FEATURE_LIST_KEY = "FEATURE_LIST_KEY"
@@ -69,6 +71,12 @@ open class InputDataPointDialog : DialogFragment(), ViewPager.OnPageChangeListen
             listenToFeatures()
             listenToIndex()
             listenToState()
+
+            Timer().scheduleAtFixedRate(timerTask {
+                getActivity()?.runOnUiThread {
+                    (binding.viewPager.adapter as ViewPagerAdapter).updateStopwatch()
+                }
+            }, 1000, 1000)
 
             binding.viewPager.addOnPageChangeListener(this)
             dialog?.setCanceledOnTouchOutside(true)
@@ -180,6 +188,10 @@ open class InputDataPointDialog : DialogFragment(), ViewPager.OnPageChangeListen
 
         fun updateAllDateTimes() = existingViews.forEach { dpiv -> dpiv.updateDateTimes() }
 
+        fun updateStopwatch() {
+            existingViews.forEach { dpiv -> dpiv.updateStopwatchIfNeeded() }
+        }
+
         override fun getCount() = features.size
     }
 
@@ -212,6 +224,8 @@ open class InputDataPointDialog : DialogFragment(), ViewPager.OnPageChangeListen
     private fun onAddClicked() {
         val currIndex = viewModel.currentFeatureIndex.value!!
         val currFeature = viewModel.features.value!![currIndex]
+        (binding.viewPager.adapter as ViewPagerAdapter).updateStopwatch()
+
         viewModel.uiStates[currFeature]?.timeFixed = true
         onAddClicked(currFeature)
     }
